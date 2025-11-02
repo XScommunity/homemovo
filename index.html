@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto EGGMAN</title>
+    <title>Social Feed</title>
     <style>
         * {
             margin: 0;
@@ -418,7 +418,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="logo">Projeto Eggman</div>
+            <div class="logo">✨ Social Feed</div>
         </div>
     </div>
 
@@ -475,9 +475,7 @@
             {
                 id: "1",
                 title: "Mecha Sonic MK.1",
-                description: "Mecha Sonic Mk.I  é uma versão robótica do Sonic com um exoesqueleto volumoso cinza-prateado, pés laranja brilhantes e um único olho luminoso. Ele possui várias lâminas giratórias na parte de trás da cabeça, no lugar dos espinhos do Sonic
-Na parte de trás de seus sapatos, há rodas que o ajudam a acelerar
-Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses espinhos também eram úteis quando o robô executava sua própria variação do Ataque Giratório característico do Sonic . Assim como o ouriço, o Mecha Sonic também podia disparar a partir da imobilidade em sua forma de bola curvada, semelhante ao Spin Dash",
+                description: "Mecha Sonic Mk.I é uma versão robótica do Sonic com um exoesqueleto volumoso cinza-prateado, pés laranja brilhantes e um único olho luminoso. Ele possui várias lâminas giratórias na parte de trás da cabeça, no lugar dos espinhos do Sonic. Na parte de trás de seus sapatos, há rodas que o ajudam a acelerar. Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses espinhos também eram úteis quando o robô executava sua própria variação do Ataque Giratório característico do Sonic. Assim como o ouriço, o Mecha Sonic também podia disparar a partir da imobilidade em sua forma de bola curvada, semelhante ao Spin Dash",
                 imageUrl: "https://media.discordapp.net/attachments/1434620308177944670/1434620308517552248/image.png?ex=6908fdc7&is=6907ac47&hm=4ea8c3cd8066408a22f4a96602cded823fc0b00ebea21c106f3c9abb89940ebe&=&format=webp&quality=lossless&width=612&height=774",
                 likes: 0,
                 dislikes: 0,
@@ -542,8 +540,8 @@ Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses esp
                 const hasDisliked = post.dislikedBy?.includes(userId);
                 
                 return `
-                    <div class="post-card" onclick="openPost('${post.id}')">
-                        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="${post.title}">` : ''}
+                    <div class="post-card" onclick="event.preventDefault(); openPost('${post.id}');">
+                        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="${post.title}" onclick="event.stopPropagation(); openPost('${post.id}');">` : ''}
                         <div class="post-content">
                             <div class="post-title">${post.title}</div>
                             <div class="post-description">${post.description}</div>
@@ -594,7 +592,6 @@ Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses esp
                     <button class="action-btn dislike-btn ${hasDisliked ? 'active' : ''}" onclick="toggleDislike('${selectedPost.id}')">
                         👎 ${selectedPost.dislikes}
                     </button>
-                    ${isAdmin ? `<button class="action-btn delete-btn" onclick="deletePost('${selectedPost.id}')">🗑️ Deletar</button>` : ''}
                 </div>
 
                 <div class="comments-section">
@@ -609,7 +606,6 @@ Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses esp
                         ${selectedPost.comments?.length > 0 
                             ? selectedPost.comments.map(c => `
                                 <div class="comment">
-                                    ${isAdmin ? `<button class="comment-delete" onclick="deleteComment('${selectedPost.id}', '${c.id}')">🗑️</button>` : ''}
                                     <div class="comment-text">${c.text}</div>
                                     <div class="comment-date">${new Date(c.timestamp).toLocaleString('pt-BR')}</div>
                                 </div>
@@ -700,26 +696,11 @@ Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses esp
         }
 
         function deleteComment(postId, commentId) {
-            if (!isAdmin) return;
-
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            post.comments = post.comments.filter(c => c.id !== commentId);
-            savePosts();
-            renderPosts();
-            openPost(postId);
+            // Removido - sem função admin
         }
 
         function deletePost(postId) {
-            if (!isAdmin) return;
-
-            if (confirm('Tem certeza que deseja deletar este post?')) {
-                posts = posts.filter(p => p.id !== postId);
-                savePosts();
-                renderPosts();
-                closePostModal();
-            }
+            // Removido - sem função admin
         }
 
         // Fechar modais ao clicar fora
@@ -742,5 +723,3 @@ Os espinhos ativos do Mecha Sonic o protegiam de ataques pelas costas. Esses esp
     </script>
 </body>
 </html>
-
-
