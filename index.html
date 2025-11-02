@@ -596,9 +596,9 @@
         }
 
         async function createPost() {
-            const title = document.getElementById('postTitle').value;
-            const description = document.getElementById('postDescription').value;
-            const imageUrl = document.getElementById('postImage').value;
+            const title = document.getElementById('postTitle').value.trim();
+            const description = document.getElementById('postDescription').value.trim();
+            const imageUrl = document.getElementById('postImage').value.trim();
 
             if (!title || !description) {
                 alert('Preencha título e descrição!');
@@ -619,11 +619,15 @@
             };
 
             try {
+                console.log('Criando post...', post);
                 await window.storage.set(`post:${post.id}`, JSON.stringify(post), true);
-                await loadPosts();
+                console.log('Post criado com sucesso!');
                 closeCreateModal();
+                await loadPosts();
+                alert('Post criado com sucesso!');
             } catch (error) {
                 console.error('Erro ao criar post:', error);
+                alert('Erro ao criar post: ' + error.message);
             }
         }
 
