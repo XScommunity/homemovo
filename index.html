@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>tt</title>
+    <title>Projeto EGGMAN</title>
     <style>
         * {
             margin: 0;
@@ -419,7 +419,6 @@
     <div class="header">
         <div class="header-content">
             <div class="logo">✨ Social Feed</div>
-            <div id="headerButtons"></div>
         </div>
     </div>
 
@@ -433,33 +432,11 @@
     </div>
 
     <!-- Modal Login -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2>🔐 Admin Login</h2>
-                <button class="close-btn" onclick="closeLoginModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <input type="password" id="passwordInput" class="input-field" placeholder="Digite a senha (admin123)">
-                <button class="btn btn-primary" style="width: 100%;" onclick="handleLogin()">Entrar</button>
-            </div>
-        </div>
+    <div id="loginModal" class="modal" style="display: none;">
     </div>
 
     <!-- Modal Criar Post -->
-    <div id="createModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>➕ Nova Postagem</h2>
-                <button class="close-btn" onclick="closeCreateModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="postTitle" class="input-field" placeholder="Título do post">
-                <textarea id="postDescription" class="input-field" placeholder="Escreva a descrição..."></textarea>
-                <input type="text" id="postImage" class="input-field" placeholder="URL da imagem (opcional)">
-                <button class="btn btn-info" style="width: 100%;" onclick="createPost()">Criar Post</button>
-            </div>
-        </div>
+    <div id="createModal" class="modal" style="display: none;">
     </div>
 
     <!-- Modal Detalhes Post -->
@@ -474,21 +451,64 @@
     </div>
 
     <script>
-        let isAdmin = false;
         let posts = [];
         let selectedPost = null;
 
-        // Funções de Storage usando localStorage
-        function savePosts() {
-            localStorage.setItem('socialPosts', JSON.stringify(posts));
-        }
-
-        function loadPostsFromStorage() {
-            const stored = localStorage.getItem('socialPosts');
-            if (stored) {
-                posts = JSON.parse(stored);
+        // ADICIONE SEUS POSTS AQUI - COPIE E COLE ESTE MODELO:
+        /*
+        {
+            id: "1",
+            title: "Título do Post",
+            description: "Descrição completa do post aqui...",
+            imageUrl: "https://example.com/imagem.jpg",
+            likes: 0,
+            dislikes: 0,
+            comments: [],
+            timestamp: Date.now(),
+            likedBy: [],
+            dislikedBy: []
+        },
+        */
+        
+        // POSTS PADRÃO - EDITE AQUI:
+        posts = [
+            {
+                id: "1",
+                title: "Bem-vindo ao Social Feed!",
+                description: "Este é o primeiro post de exemplo. Você pode editar este texto e adicionar mais posts copiando este modelo!",
+                imageUrl: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=500",
+                likes: 0,
+                dislikes: 0,
+                comments: [],
+                timestamp: Date.now(),
+                likedBy: [],
+                dislikedBy: []
+            },
+            {
+                id: "2",
+                title: "Como adicionar mais posts?",
+                description: "É simples! Copie o modelo de post que está nos comentários do código e cole aqui dentro do array posts. Não esqueça de mudar o ID!",
+                imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500",
+                likes: 0,
+                dislikes: 0,
+                comments: [],
+                timestamp: Date.now() - 100000,
+                likedBy: [],
+                dislikedBy: []
+            },
+            {
+                id: "3",
+                title: "Design Moderno",
+                description: "O site tem um design bonito com gradientes roxos, bordas neon e animações suaves. Perfeito para sua rede social!",
+                imageUrl: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500",
+                likes: 0,
+                dislikes: 0,
+                comments: [],
+                timestamp: Date.now() - 200000,
+                likedBy: [],
+                dislikedBy: []
             }
-        }
+        ];
 
         function getUserId() {
             let userId = localStorage.getItem('userId');
@@ -499,8 +519,30 @@
             return userId;
         }
 
+        function savePosts() {
+            localStorage.setItem('socialPosts', JSON.stringify(posts));
+        }
+
         function loadPosts() {
-            loadPostsFromStorage();
+            const stored = localStorage.getItem('socialPosts');
+            if (stored) {
+                const storedPosts = JSON.parse(stored);
+                // Mesclar likes/dislikes/comentários salvos com os posts hardcoded
+                posts = posts.map(post => {
+                    const savedPost = storedPosts.find(p => p.id === post.id);
+                    if (savedPost) {
+                        return {
+                            ...post,
+                            likes: savedPost.likes || 0,
+                            dislikes: savedPost.dislikes || 0,
+                            comments: savedPost.comments || [],
+                            likedBy: savedPost.likedBy || [],
+                            dislikedBy: savedPost.dislikedBy || []
+                        };
+                    }
+                    return post;
+                });
+            }
             renderPosts();
         }
 
@@ -545,77 +587,7 @@
         }
 
         function renderHeader() {
-            const buttons = document.getElementById('headerButtons');
-            if (!isAdmin) {
-                buttons.innerHTML = '<button class="btn btn-primary" onclick="openLoginModal()">Admin Login</button>';
-            } else {
-                buttons.innerHTML = `
-                    <button class="btn btn-success">✓ Admin</button>
-                    <button class="btn btn-info" onclick="openCreateModal()">➕ Novo Post</button>
-                `;
-            }
-        }
-
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-        }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.remove('active');
-            document.getElementById('passwordInput').value = '';
-        }
-
-        function handleLogin() {
-            const password = document.getElementById('passwordInput').value;
-            if (password === 'admin123') {
-                isAdmin = true;
-                closeLoginModal();
-                renderHeader();
-                alert('Login realizado com sucesso!');
-            } else {
-                alert('Senha incorreta!');
-            }
-        }
-
-        function openCreateModal() {
-            document.getElementById('createModal').classList.add('active');
-        }
-
-        function closeCreateModal() {
-            document.getElementById('createModal').classList.remove('active');
-            document.getElementById('postTitle').value = '';
-            document.getElementById('postDescription').value = '';
-            document.getElementById('postImage').value = '';
-        }
-
-        function createPost() {
-            const title = document.getElementById('postTitle').value.trim();
-            const description = document.getElementById('postDescription').value.trim();
-            const imageUrl = document.getElementById('postImage').value.trim();
-
-            if (!title || !description) {
-                alert('Preencha título e descrição!');
-                return;
-            }
-
-            const post = {
-                id: Date.now().toString(),
-                title,
-                description,
-                imageUrl,
-                likes: 0,
-                dislikes: 0,
-                comments: [],
-                timestamp: Date.now(),
-                likedBy: [],
-                dislikedBy: []
-            };
-
-            posts.unshift(post);
-            savePosts();
-            closeCreateModal();
-            renderPosts();
-            alert('Post criado com sucesso!');
+            // Sem botões admin
         }
 
         function openPost(postId) {
