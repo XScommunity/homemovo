@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>sigma</title>
+    <title>boy</title>
     <style>
         * {
             margin: 0;
@@ -488,6 +488,12 @@
         }
 
         async function loadPosts() {
+            if (!window.storage) {
+                console.error('Storage não disponível!');
+                document.getElementById('loading').innerHTML = '<div class="empty-state"><h3>⚠️ Erro</h3><p>Sistema de armazenamento não disponível. Este site precisa ser executado no ambiente Claude.ai</p></div>';
+                return;
+            }
+            
             try {
                 const result = await window.storage.list('post:', true);
                 if (result && result.keys) {
@@ -596,6 +602,11 @@
         }
 
         async function createPost() {
+            if (!window.storage) {
+                alert('Sistema de armazenamento não disponível. Use este site no Claude.ai');
+                return;
+            }
+
             const title = document.getElementById('postTitle').value.trim();
             const description = document.getElementById('postDescription').value.trim();
             const imageUrl = document.getElementById('postImage').value.trim();
@@ -826,4 +837,3 @@
     </script>
 </body>
 </html>
-
