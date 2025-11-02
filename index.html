@@ -115,10 +115,11 @@
             background: #1a1a1a;
             border-radius: 15px;
             overflow: hidden;
-            cursor: pointer;
             transition: all 0.4s ease;
             border: 2px solid #ff0000;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .project-card:hover {
@@ -141,6 +142,7 @@
             overflow: hidden;
             background-size: cover;
             background-position: center;
+            cursor: pointer;
         }
 
         .project-image img {
@@ -152,6 +154,8 @@
         .project-content {
             padding: 30px;
             background: #1a1a1a;
+            flex: 1;
+            cursor: pointer;
         }
 
         .project-title {
@@ -165,35 +169,72 @@
             font-size: 1rem;
             line-height: 1.6;
             color: #cccccc;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .project-footer {
+            padding: 20px 30px;
+            background: #0a0a0a;
+            border-top: 1px solid #ff0000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .like-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .like-btn {
+            background: transparent;
+            border: 2px solid #ff0000;
+            color: #ff0000;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .like-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .like-btn.active {
+            background: #ff0000;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+
+        .like-btn.dislike-btn.active {
+            background: #8b0000;
+            border-color: #8b0000;
         }
 
         .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
             background: rgba(0, 0, 0, 0.8);
             border: 2px solid #ff0000;
             color: #ff0000;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1.5rem;
-            display: none;
-            align-items: center;
-            justify-content: center;
+            font-size: 1rem;
             transition: all 0.3s ease;
-            z-index: 10;
+            font-weight: bold;
         }
 
         .delete-btn:hover {
             background: #ff0000;
             color: white;
-            transform: rotate(90deg);
-        }
-
-        .admin-mode .project-card:hover .delete-btn {
-            display: flex;
+            transform: scale(1.05);
         }
 
         /* Modal Overlay */
@@ -214,6 +255,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         @keyframes fadeIn {
@@ -225,13 +267,17 @@
             background: #1a1a1a;
             border: 3px solid #ff0000;
             border-radius: 20px;
-            max-width: 500px;
-            width: 90%;
+            max-width: 900px;
+            width: 100%;
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
             animation: slideDown 0.4s ease;
             box-shadow: 0 0 100px rgba(255, 0, 0, 0.5);
+        }
+
+        .modal.small {
+            max-width: 500px;
         }
 
         @keyframes slideDown {
@@ -275,6 +321,7 @@
             font-weight: bold;
             color: white;
             text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            padding-right: 60px;
         }
 
         .modal-body {
@@ -356,6 +403,35 @@
             font-size: 1rem;
         }
 
+        .project-detail-image {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #ff0000 0%, #8b0000 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .project-detail-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .project-detail-description {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #cccccc;
+            white-space: pre-wrap;
+        }
+
         .error-message {
             color: #ff4444;
             text-align: center;
@@ -412,6 +488,18 @@
                 justify-content: center;
                 margin-top: 20px;
             }
+
+            .modal-title {
+                font-size: 1.8rem;
+            }
+
+            .project-detail-image {
+                height: 300px;
+            }
+
+            .like-buttons {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -434,7 +522,7 @@
 
     <!-- Login Modal -->
     <div class="modal-overlay" id="loginModal">
-        <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal small" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <button class="close-btn" onclick="closeLoginModal()">×</button>
                 <h2 class="modal-title">Admin Login</h2>
@@ -456,7 +544,7 @@
 
     <!-- Add Project Modal -->
     <div class="modal-overlay" id="addProjectModal">
-        <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal small" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <button class="close-btn" onclick="closeAddProjectModal()">×</button>
                 <h2 class="modal-title">Add New Project</h2>
@@ -482,12 +570,34 @@
         </div>
     </div>
 
+    <!-- Project Detail Modal -->
+    <div class="modal-overlay" id="projectDetailModal">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button class="close-btn" onclick="closeProjectDetailModal()">×</button>
+                <h2 class="modal-title" id="detailTitle">Project Title</h2>
+            </div>
+            <div class="modal-body">
+                <div class="project-detail-image" id="detailImage">
+                    NO IMAGE
+                </div>
+                <p class="project-detail-description" id="detailDescription">
+                    Project description goes here...
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script>
         let projects = [];
         let isAdmin = false;
+        let likes = {};
 
-        // Load projects on page load
-        loadProjects();
+        // Load projects and likes on page load
+        (async () => {
+            await loadProjects();
+            await loadLikes();
+        })();
 
         // Login Modal
         function openLoginModal() {
@@ -510,7 +620,6 @@
                 isAdmin = true;
                 closeLoginModal();
                 updateHeaderControls();
-                document.body.classList.add('admin-mode');
                 renderProjects();
             } else {
                 const errorMsg = document.getElementById('errorMessage');
@@ -538,7 +647,6 @@
         function logout() {
             isAdmin = false;
             updateHeaderControls();
-            document.body.classList.remove('admin-mode');
             renderProjects();
         }
 
@@ -571,30 +679,111 @@
         }
 
         // Add Project
-        function addProject(e) {
+        async function addProject(e) {
             e.preventDefault();
             
             const project = {
                 id: Date.now(),
                 title: document.getElementById('projectTitle').value,
                 description: document.getElementById('projectDescription').value,
-                image: document.getElementById('projectImage').value
+                image: document.getElementById('projectImage').value,
+                likes: 0,
+                dislikes: 0
             };
             
             projects.push(project);
-            saveProjects();
+            await saveProjects();
             renderProjects();
             closeAddProjectModal();
         }
 
         // Delete Project
-        function deleteProject(id, event) {
+        async function deleteProject(id, event) {
             event.stopPropagation();
             if (confirm('Are you sure you want to delete this project?')) {
                 projects = projects.filter(p => p.id !== id);
-                saveProjects();
+                delete likes[id];
+                await saveProjects();
+                await saveLikes();
                 renderProjects();
             }
+        }
+
+        // Open Project Detail
+        function openProjectDetail(id) {
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+
+            document.getElementById('detailTitle').textContent = project.title;
+            document.getElementById('detailDescription').textContent = project.description;
+            
+            const imageContainer = document.getElementById('detailImage');
+            if (project.image) {
+                imageContainer.style.backgroundImage = `url('${project.image}')`;
+                imageContainer.textContent = '';
+            } else {
+                imageContainer.style.backgroundImage = '';
+                imageContainer.textContent = 'NO IMAGE';
+            }
+
+            document.getElementById('projectDetailModal').classList.add('active');
+        }
+
+        function closeProjectDetailModal() {
+            document.getElementById('projectDetailModal').classList.remove('active');
+        }
+
+        // Like/Dislike System
+        function toggleLike(id, event) {
+            event.stopPropagation();
+            
+            if (!likes[id]) {
+                likes[id] = { type: null };
+            }
+
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+
+            if (likes[id].type === 'like') {
+                likes[id].type = null;
+                project.likes--;
+            } else {
+                if (likes[id].type === 'dislike') {
+                    project.dislikes--;
+                }
+                likes[id].type = 'like';
+                project.likes++;
+            }
+
+            saveLikes();
+            saveProjects();
+            renderProjects();
+        }
+
+        function toggleDislike(id, event) {
+            event.stopPropagation();
+            
+            if (!likes[id]) {
+                likes[id] = { type: null };
+            }
+
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+
+            if (likes[id].type === 'dislike') {
+                likes[id].type = null;
+                project.dislikes--;
+            } else {
+                if (likes[id].type === 'like') {
+                    project.likes--;
+                }
+                likes[id].type = 'dislike';
+                project.dislikes++;
+            }
+
+            saveLikes();
+            saveProjects();
+            renderProjects();
         }
 
         // Render Projects
@@ -611,32 +800,77 @@
                 return;
             }
             
-            container.innerHTML = projects.map(project => `
-                <div class="project-card">
-                    ${isAdmin ? `<button class="delete-btn" onclick="deleteProject(${project.id}, event)">×</button>` : ''}
-                    <div class="project-image" style="${project.image ? `background-image: url('${project.image}')` : ''}">
-                        ${!project.image ? 'NO IMAGE' : ''}
+            container.innerHTML = projects.map(project => {
+                const userLike = likes[project.id] || { type: null };
+                
+                return `
+                    <div class="project-card">
+                        <div class="project-image" style="${project.image ? `background-image: url('${project.image}')` : ''}" onclick="openProjectDetail(${project.id})">
+                            ${!project.image ? 'NO IMAGE' : ''}
+                        </div>
+                        <div class="project-content" onclick="openProjectDetail(${project.id})">
+                            <h3 class="project-title">${project.title}</h3>
+                            <p class="project-description">${project.description}</p>
+                        </div>
+                        <div class="project-footer">
+                            <div class="like-buttons">
+                                <button class="like-btn ${userLike.type === 'like' ? 'active' : ''}" onclick="toggleLike(${project.id}, event)">
+                                    👍 ${project.likes || 0}
+                                </button>
+                                <button class="like-btn dislike-btn ${userLike.type === 'dislike' ? 'active' : ''}" onclick="toggleDislike(${project.id}, event)">
+                                    👎 ${project.dislikes || 0}
+                                </button>
+                            </div>
+                            ${isAdmin ? `<button class="delete-btn" onclick="deleteProject(${project.id}, event)">Delete</button>` : ''}
+                        </div>
                     </div>
-                    <div class="project-content">
-                        <h3 class="project-title">${project.title}</h3>
-                        <p class="project-description">${project.description}</p>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // Save Projects to LocalStorage
-        function saveProjects() {
-            localStorage.setItem('eggmanProjects', JSON.stringify(projects));
+        // Save Projects to Storage (shared with all users)
+        async function saveProjects() {
+            try {
+                await window.storage.set('eggman-projects', JSON.stringify(projects), true);
+            } catch (error) {
+                console.error('Error saving projects:', error);
+            }
         }
 
-        // Load Projects from LocalStorage
-        function loadProjects() {
-            const saved = localStorage.getItem('eggmanProjects');
-            if (saved) {
-                projects = JSON.parse(saved);
+        // Load Projects from Storage (shared with all users)
+        async function loadProjects() {
+            try {
+                const result = await window.storage.get('eggman-projects', true);
+                if (result && result.value) {
+                    projects = JSON.parse(result.value);
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                projects = [];
             }
             renderProjects();
+        }
+
+        // Save Likes to Storage (personal for each user)
+        async function saveLikes() {
+            try {
+                await window.storage.set('eggman-likes', JSON.stringify(likes), false);
+            } catch (error) {
+                console.error('Error saving likes:', error);
+            }
+        }
+
+        // Load Likes from Storage (personal for each user)
+        async function loadLikes() {
+            try {
+                const result = await window.storage.get('eggman-likes', false);
+                if (result && result.value) {
+                    likes = JSON.parse(result.value);
+                }
+            } catch (error) {
+                console.error('Error loading likes:', error);
+                likes = {};
+            }
         }
 
         // Close modals when clicking outside
@@ -646,6 +880,10 @@
 
         document.getElementById('addProjectModal').addEventListener('click', function(e) {
             if (e.target === this) closeAddProjectModal();
+        });
+
+        document.getElementById('projectDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProjectDetailModal();
         });
     </script>
 </body>
