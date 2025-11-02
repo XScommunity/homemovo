@@ -1,566 +1,824 @@
-import React, { useState, useEffect } from 'react';
-import { ThumbsUp, ThumbsDown, MessageCircle, Trash2, X, Plus, Sparkles } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Feed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-export default function SocialPostsApp() {
-  const [posts, setPosts] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [newComment, setNewComment] = useState('');
-  const [loading, setLoading] = useState(true);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
 
-  const [newPost, setNewPost] = useState({
-    title: '',
-    description: '',
-    imageUrl: ''
-  });
+        .header {
+            background: rgba(20, 20, 40, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(147, 51, 234, 0.3);
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(147, 51, 234, 0.2);
+        }
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-  const loadPosts = async () => {
-    try {
-      const result = await window.storage.list('post:', true);
-      if (result && result.keys) {
-        const loadedPosts = await Promise.all(
-          result.keys.map(async (key) => {
-            const data = await window.storage.get(key, true);
-            return data ? JSON.parse(data.value) : null;
-          })
-        );
-        setPosts(loadedPosts.filter(p => p !== null).sort((a, b) => b.timestamp - a.timestamp));
-      }
-    } catch (error) {
-      console.log('Nenhum post encontrado ainda');
-      setPosts([]);
-    }
-    setLoading(false);
-  };
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-  const handleAdminLogin = () => {
-    if (adminPassword === 'admin123') {
-      setIsAdmin(true);
-      setShowLoginModal(false);
-      setAdminPassword('');
-    } else {
-      alert('Senha incorreta!');
-    }
-  };
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
 
-  const createPost = async () => {
-    if (!newPost.title || !newPost.description) {
-      alert('Preencha título e descrição!');
-      return;
-    }
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
 
-    const post = {
-      id: Date.now().toString(),
-      ...newPost,
-      likes: 0,
-      dislikes: 0,
-      comments: [],
-      timestamp: Date.now(),
-      likedBy: [],
-      dislikedBy: []
-    };
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(139, 92, 246, 0.5);
+        }
 
-    try {
-      await window.storage.set(`post:${post.id}`, JSON.stringify(post), true);
-      await loadPosts();
-      setShowCreateModal(false);
-      setNewPost({ title: '', description: '', imageUrl: '' });
-    } catch (error) {
-      console.error('Erro ao criar post:', error);
-    }
-  };
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            margin-right: 10px;
+        }
 
-  const deletePost = async (postId) => {
-    if (!isAdmin) return;
-    
-    if (window.confirm('Tem certeza que deseja deletar este post?')) {
-      try {
-        await window.storage.delete(`post:${postId}`, true);
-        await loadPosts();
-        setSelectedPost(null);
-      } catch (error) {
-        console.error('Erro ao deletar post:', error);
-      }
-    }
-  };
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
 
-  const toggleLike = async (postId) => {
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
+        }
 
-    const userId = getOrCreateUserId();
-    const hasLiked = post.likedBy?.includes(userId);
-    const hasDisliked = post.dislikedBy?.includes(userId);
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
 
-    let updatedPost = { ...post };
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
 
-    if (hasLiked) {
-      updatedPost.likes -= 1;
-      updatedPost.likedBy = post.likedBy.filter(id => id !== userId);
-    } else {
-      updatedPost.likes += 1;
-      updatedPost.likedBy = [...(post.likedBy || []), userId];
-      
-      if (hasDisliked) {
-        updatedPost.dislikes -= 1;
-        updatedPost.dislikedBy = post.dislikedBy.filter(id => id !== userId);
-      }
-    }
+        .post-card {
+            background: linear-gradient(145deg, rgba(30, 30, 60, 0.8), rgba(20, 20, 40, 0.9));
+            border-radius: 25px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s;
+            border: 2px solid rgba(147, 51, 234, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
-    try {
-      await window.storage.set(`post:${postId}`, JSON.stringify(updatedPost), true);
-      await loadPosts();
-      if (selectedPost?.id === postId) {
-        setSelectedPost(updatedPost);
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar like:', error);
-    }
-  };
+        .post-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(147, 51, 234, 0.6);
+            box-shadow: 0 12px 40px rgba(147, 51, 234, 0.4);
+        }
 
-  const toggleDislike = async (postId) => {
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+        .post-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
 
-    const userId = getOrCreateUserId();
-    const hasLiked = post.likedBy?.includes(userId);
-    const hasDisliked = post.dislikedBy?.includes(userId);
+        .post-content {
+            padding: 25px;
+        }
 
-    let updatedPost = { ...post };
+        .post-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #fff;
+        }
 
-    if (hasDisliked) {
-      updatedPost.dislikes -= 1;
-      updatedPost.dislikedBy = post.dislikedBy.filter(id => id !== userId);
-    } else {
-      updatedPost.dislikes += 1;
-      updatedPost.dislikedBy = [...(post.dislikedBy || []), userId];
-      
-      if (hasLiked) {
-        updatedPost.likes -= 1;
-        updatedPost.likedBy = post.likedBy.filter(id => id !== userId);
-      }
-    }
+        .post-description {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
 
-    try {
-      await window.storage.set(`post:${postId}`, JSON.stringify(updatedPost), true);
-      await loadPosts();
-      if (selectedPost?.id === postId) {
-        setSelectedPost(updatedPost);
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar dislike:', error);
-    }
-  };
+        .post-stats {
+            display: flex;
+            gap: 20px;
+            color: #94a3b8;
+        }
 
-  const addComment = async (postId) => {
-    if (!newComment.trim()) return;
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-    const comment = {
-      id: Date.now().toString(),
-      text: newComment,
-      timestamp: Date.now()
-    };
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
 
-    const updatedPost = {
-      ...post,
-      comments: [...(post.comments || []), comment]
-    };
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-    try {
-      await window.storage.set(`post:${postId}`, JSON.stringify(updatedPost), true);
-      await loadPosts();
-      setSelectedPost(updatedPost);
-      setNewComment('');
-    } catch (error) {
-      console.error('Erro ao adicionar comentário:', error);
-    }
-  };
+        .modal-content {
+            background: linear-gradient(145deg, rgba(30, 30, 60, 0.95), rgba(20, 20, 40, 0.98));
+            border-radius: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 3px solid rgba(147, 51, 234, 0.5);
+            box-shadow: 0 20px 60px rgba(147, 51, 234, 0.4);
+            animation: slideUp 0.4s;
+        }
 
-  const deleteComment = async (postId, commentId) => {
-    if (!isAdmin) return;
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+        .modal-header {
+            padding: 30px;
+            border-bottom: 2px solid rgba(147, 51, 234, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: sticky;
+            top: 0;
+            background: rgba(20, 20, 40, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
 
-    const updatedPost = {
-      ...post,
-      comments: post.comments.filter(c => c.id !== commentId)
-    };
+        .modal-header-left {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex: 1;
+        }
 
-    try {
-      await window.storage.set(`post:${postId}`, JSON.stringify(updatedPost), true);
-      await loadPosts();
-      setSelectedPost(updatedPost);
-    } catch (error) {
-      console.error('Erro ao deletar comentário:', error);
-    }
-  };
+        .modal-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            object-fit: cover;
+            border: 2px solid rgba(147, 51, 234, 0.4);
+        }
 
-  const getOrCreateUserId = () => {
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      userId = 'user_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('userId', userId);
-    }
-    return userId;
-  };
+        .close-btn {
+            background: rgba(100, 100, 150, 0.3);
+            border: none;
+            color: #cbd5e1;
+            font-size: 28px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-  const openPostModal = (post) => {
-    setSelectedPost(post);
-  };
+        .close-btn:hover {
+            background: rgba(239, 68, 68, 0.5);
+            color: white;
+        }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <Sparkles className="w-16 h-16 text-purple-400 animate-pulse mx-auto mb-4" />
-          <div className="text-white text-2xl font-bold">Carregando...</div>
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-description {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #cbd5e1;
+            margin-bottom: 30px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .like-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .like-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .like-btn.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .dislike-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .dislike-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(239, 68, 68, 0.5);
+        }
+
+        .dislike-btn.active {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            margin-left: auto;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(220, 38, 38, 0.5);
+        }
+
+        .comments-section {
+            border-top: 2px solid rgba(147, 51, 234, 0.2);
+            padding-top: 30px;
+        }
+
+        .comments-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comment-form textarea {
+            width: 100%;
+            padding: 15px;
+            background: rgba(30, 30, 60, 0.6);
+            border: 2px solid rgba(147, 51, 234, 0.3);
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            resize: none;
+            margin-bottom: 15px;
+        }
+
+        .comment-form textarea:focus {
+            outline: none;
+            border-color: rgba(147, 51, 234, 0.6);
+        }
+
+        .comment {
+            background: rgba(30, 30, 60, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(147, 51, 234, 0.2);
+        }
+
+        .comment-text {
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .comment-date {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .comment-delete {
+            background: rgba(239, 68, 68, 0.3);
+            border: none;
+            color: #fca5a5;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            float: right;
+            transition: all 0.3s;
+        }
+
+        .comment-delete:hover {
+            background: rgba(239, 68, 68, 0.5);
+            color: white;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            background: rgba(30, 30, 60, 0.6);
+            border: 2px solid rgba(147, 51, 234, 0.3);
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: rgba(147, 51, 234, 0.6);
+        }
+
+        textarea.input-field {
+            resize: none;
+            min-height: 120px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 100px 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">✨ Social Feed</div>
+            <div id="headerButtons"></div>
         </div>
-      </div>
-    );
-  }
+    </div>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
-      {/* Header com Glassmorphism */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl bg-slate-900/30 border-b border-purple-500/20 shadow-lg shadow-purple-500/10">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/50">
-                <Sparkles className="w-7 h-7 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Social Feed
-              </h1>
-            </div>
-            <div className="flex gap-3">
-              {!isAdmin ? (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-105"
-                >
-                  Admin Login
-                </button>
-              ) : (
-                <>
-                  <span className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium shadow-lg shadow-green-500/30">
-                    ✓ Admin
-                  </span>
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 transition-all duration-300 hover:scale-105 flex items-center gap-2"
-                  >
-                    <Plus size={20} /> Novo Post
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+    <div class="container">
+        <div id="postsGrid" class="posts-grid"></div>
+        <div id="emptyState" style="display: none;" class="empty-state">
+            <h3>Nenhuma postagem ainda</h3>
+            <p>Faça login como admin para criar a primeira!</p>
         </div>
-      </div>
+        <div id="loading" class="loading">Carregando...</div>
+    </div>
 
-      {/* Posts Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map(post => {
-            const userId = getOrCreateUserId();
+    <!-- Modal Login -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🔐 Admin Login</h2>
+                <button class="close-btn" onclick="closeLoginModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="password" id="passwordInput" class="input-field" placeholder="Digite a senha (admin123)">
+                <button class="btn btn-primary" style="width: 100%;" onclick="handleLogin()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Criar Post -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Nova Postagem</h2>
+                <button class="close-btn" onclick="closeCreateModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="postTitle" class="input-field" placeholder="Título do post">
+                <textarea id="postDescription" class="input-field" placeholder="Escreva a descrição..."></textarea>
+                <input type="text" id="postImage" class="input-field" placeholder="URL da imagem (opcional)">
+                <button class="btn btn-info" style="width: 100%;" onclick="createPost()">Criar Post</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes Post -->
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-left" id="postModalHeader"></div>
+                <button class="close-btn" onclick="closePostModal()">×</button>
+            </div>
+            <div class="modal-body" id="postModalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        let isAdmin = false;
+        let posts = [];
+        let selectedPost = null;
+
+        function getUserId() {
+            let userId = localStorage.getItem('userId');
+            if (!userId) {
+                userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('userId', userId);
+            }
+            return userId;
+        }
+
+        async function loadPosts() {
+            try {
+                const result = await window.storage.list('post:', true);
+                if (result && result.keys) {
+                    const loadedPosts = await Promise.all(
+                        result.keys.map(async (key) => {
+                            const data = await window.storage.get(key, true);
+                            return data ? JSON.parse(data.value) : null;
+                        })
+                    );
+                    posts = loadedPosts.filter(p => p !== null).sort((a, b) => b.timestamp - a.timestamp);
+                } else {
+                    posts = [];
+                }
+            } catch (error) {
+                console.log('Nenhum post encontrado');
+                posts = [];
+            }
+            renderPosts();
+        }
+
+        function renderPosts() {
+            const grid = document.getElementById('postsGrid');
+            const empty = document.getElementById('emptyState');
+            const loading = document.getElementById('loading');
+            
+            loading.style.display = 'none';
+            
+            if (posts.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            
+            empty.style.display = 'none';
+            
+            grid.innerHTML = posts.map(post => {
+                const userId = getUserId();
+                const hasLiked = post.likedBy?.includes(userId);
+                const hasDisliked = post.dislikedBy?.includes(userId);
+                
+                return `
+                    <div class="post-card" onclick="openPost('${post.id}')">
+                        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="${post.title}">` : ''}
+                        <div class="post-content">
+                            <div class="post-title">${post.title}</div>
+                            <div class="post-description">${post.description}</div>
+                            <div class="post-stats">
+                                <div class="stat" style="${hasLiked ? 'color: #3b82f6' : ''}">
+                                    👍 ${post.likes}
+                                </div>
+                                <div class="stat" style="${hasDisliked ? 'color: #ef4444' : ''}">
+                                    👎 ${post.dislikes}
+                                </div>
+                                <div class="stat">
+                                    💬 ${post.comments?.length || 0}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHeader() {
+            const buttons = document.getElementById('headerButtons');
+            if (!isAdmin) {
+                buttons.innerHTML = '<button class="btn btn-primary" onclick="openLoginModal()">Admin Login</button>';
+            } else {
+                buttons.innerHTML = `
+                    <button class="btn btn-success">✓ Admin</button>
+                    <button class="btn btn-info" onclick="openCreateModal()">➕ Novo Post</button>
+                `;
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('passwordInput').value = '';
+        }
+
+        function handleLogin() {
+            const password = document.getElementById('passwordInput').value;
+            if (password === 'admin123') {
+                isAdmin = true;
+                closeLoginModal();
+                renderHeader();
+                alert('Login realizado com sucesso!');
+            } else {
+                alert('Senha incorreta!');
+            }
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postDescription').value = '';
+            document.getElementById('postImage').value = '';
+        }
+
+        async function createPost() {
+            const title = document.getElementById('postTitle').value;
+            const description = document.getElementById('postDescription').value;
+            const imageUrl = document.getElementById('postImage').value;
+
+            if (!title || !description) {
+                alert('Preencha título e descrição!');
+                return;
+            }
+
+            const post = {
+                id: Date.now().toString(),
+                title,
+                description,
+                imageUrl,
+                likes: 0,
+                dislikes: 0,
+                comments: [],
+                timestamp: Date.now(),
+                likedBy: [],
+                dislikedBy: []
+            };
+
+            try {
+                await window.storage.set(`post:${post.id}`, JSON.stringify(post), true);
+                await loadPosts();
+                closeCreateModal();
+            } catch (error) {
+                console.error('Erro ao criar post:', error);
+            }
+        }
+
+        function openPost(postId) {
+            selectedPost = posts.find(p => p.id === postId);
+            if (!selectedPost) return;
+
+            const userId = getUserId();
+            const hasLiked = selectedPost.likedBy?.includes(userId);
+            const hasDisliked = selectedPost.dislikedBy?.includes(userId);
+
+            document.getElementById('postModalHeader').innerHTML = `
+                ${selectedPost.imageUrl ? `<img src="${selectedPost.imageUrl}" class="modal-thumb" alt="${selectedPost.title}">` : ''}
+                <div>
+                    <h2 style="margin-bottom: 10px;">${selectedPost.title}</h2>
+                    <p style="color: #64748b; font-size: 14px;">${new Date(selectedPost.timestamp).toLocaleDateString('pt-BR')}</p>
+                </div>
+            `;
+
+            document.getElementById('postModalBody').innerHTML = `
+                <div class="modal-description">${selectedPost.description}</div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn like-btn ${hasLiked ? 'active' : ''}" onclick="toggleLike('${selectedPost.id}')">
+                        👍 ${selectedPost.likes}
+                    </button>
+                    <button class="action-btn dislike-btn ${hasDisliked ? 'active' : ''}" onclick="toggleDislike('${selectedPost.id}')">
+                        👎 ${selectedPost.dislikes}
+                    </button>
+                    ${isAdmin ? `<button class="action-btn delete-btn" onclick="deletePost('${selectedPost.id}')">🗑️ Deletar</button>` : ''}
+                </div>
+
+                <div class="comments-section">
+                    <h3 class="comments-title">💬 Comentários (${selectedPost.comments?.length || 0})</h3>
+                    
+                    <div class="comment-form">
+                        <textarea id="commentInput" placeholder="Escreva um comentário anônimo..." rows="4"></textarea>
+                        <button class="btn btn-primary" onclick="addComment('${selectedPost.id}')">Comentar</button>
+                    </div>
+
+                    <div id="commentsList">
+                        ${selectedPost.comments?.length > 0 
+                            ? selectedPost.comments.map(c => `
+                                <div class="comment">
+                                    ${isAdmin ? `<button class="comment-delete" onclick="deleteComment('${selectedPost.id}', '${c.id}')">🗑️</button>` : ''}
+                                    <div class="comment-text">${c.text}</div>
+                                    <div class="comment-date">${new Date(c.timestamp).toLocaleString('pt-BR')}</div>
+                                </div>
+                            `).join('')
+                            : '<div class="empty-state"><p>Nenhum comentário ainda. Seja o primeiro!</p></div>'
+                        }
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('postModal').classList.add('active');
+        }
+
+        function closePostModal() {
+            document.getElementById('postModal').classList.remove('active');
+            selectedPost = null;
+        }
+
+        async function toggleLike(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const userId = getUserId();
             const hasLiked = post.likedBy?.includes(userId);
             const hasDisliked = post.dislikedBy?.includes(userId);
 
-            return (
-              <div
-                key={post.id}
-                onClick={() => openPostModal(post)}
-                className="group relative bg-gradient-to-br from-slate-900/80 to-slate-800/80 rounded-3xl overflow-hidden cursor-pointer border border-purple-500/20 hover:border-purple-500/60 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/30 backdrop-blur-sm"
-              >
-                {/* Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-purple-500/10 group-hover:via-purple-500/5 group-hover:to-pink-500/10 transition-all duration-500" />
+            if (hasLiked) {
+                post.likes -= 1;
+                post.likedBy = post.likedBy.filter(id => id !== userId);
+            } else {
+                post.likes += 1;
+                post.likedBy = [...(post.likedBy || []), userId];
                 
-                {post.imageUrl && (
-                  <div className="relative h-56 overflow-hidden">
-                    <img 
-                      src={post.imageUrl} 
-                      alt={post.title} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
-                  </div>
-                )}
+                if (hasDisliked) {
+                    post.dislikes -= 1;
+                    post.dislikedBy = post.dislikedBy.filter(id => id !== userId);
+                }
+            }
+
+            try {
+                await window.storage.set(`post:${postId}`, JSON.stringify(post), true);
+                await loadPosts();
+                openPost(postId);
+            } catch (error) {
+                console.error('Erro ao atualizar like:', error);
+            }
+        }
+
+        async function toggleDislike(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const userId = getUserId();
+            const hasLiked = post.likedBy?.includes(userId);
+            const hasDisliked = post.dislikedBy?.includes(userId);
+
+            if (hasDisliked) {
+                post.dislikes -= 1;
+                post.dislikedBy = post.dislikedBy.filter(id => id !== userId);
+            } else {
+                post.dislikes += 1;
+                post.dislikedBy = [...(post.dislikedBy || []), userId];
                 
-                <div className="relative p-6">
-                  <h3 className="text-2xl font-bold text-white mb-3 line-clamp-2 group-hover:text-purple-300 transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-gray-400 mb-6 line-clamp-3 leading-relaxed">
-                    {post.description}
-                  </p>
-                  
-                  <div className="flex items-center gap-5 text-gray-400">
-                    <div className={`flex items-center gap-2 ${hasLiked ? 'text-blue-400' : ''}`}>
-                      <ThumbsUp size={18} />
-                      <span className="font-medium">{post.likes}</span>
-                    </div>
-                    <div className={`flex items-center gap-2 ${hasDisliked ? 'text-red-400' : ''}`}>
-                      <ThumbsDown size={18} />
-                      <span className="font-medium">{post.dislikes}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MessageCircle size={18} />
-                      <span className="font-medium">{post.comments?.length || 0}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                if (hasLiked) {
+                    post.likes -= 1;
+                    post.likedBy = post.likedBy.filter(id => id !== userId);
+                }
+            }
 
-        {posts.length === 0 && (
-          <div className="text-center py-20">
-            <Sparkles className="w-20 h-20 text-purple-400/30 mx-auto mb-6" />
-            <p className="text-2xl text-gray-400 mb-2">Nenhuma postagem ainda</p>
-            <p className="text-gray-500">Faça login como admin para criar a primeira!</p>
-          </div>
-        )}
-      </div>
+            try {
+                await window.storage.set(`post:${postId}`, JSON.stringify(post), true);
+                await loadPosts();
+                openPost(postId);
+            } catch (error) {
+                console.error('Erro ao atualizar dislike:', error);
+            }
+        }
 
-      {/* Modal Login Admin */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl border-2 border-purple-500/50 shadow-purple-500/30">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">Admin Login</h2>
-            </div>
-            <input
-              type="password"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
-              placeholder="Digite a senha (admin123)"
-              className="w-full px-5 py-4 bg-slate-800/80 text-white rounded-2xl mb-6 focus:outline-none focus:ring-2 focus:ring-purple-500 border border-purple-500/20 placeholder-gray-500"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={handleAdminLogin}
-                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-105"
-              >
-                Entrar
-              </button>
-              <button
-                onClick={() => {
-                  setShowLoginModal(false);
-                  setAdminPassword('');
-                }}
-                className="flex-1 px-6 py-3.5 bg-slate-700/80 hover:bg-slate-700 text-white rounded-xl font-medium transition-all duration-300"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        async function addComment(postId) {
+            const commentText = document.getElementById('commentInput').value;
+            if (!commentText.trim()) return;
 
-      {/* Modal Criar Post */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 max-w-2xl w-full shadow-2xl border-2 border-blue-500/50 shadow-blue-500/30 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center">
-                <Plus className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">Nova Postagem</h2>
-            </div>
-            <input
-              type="text"
-              value={newPost.title}
-              onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-              placeholder="Título do post"
-              className="w-full px-5 py-4 bg-slate-800/80 text-white rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-blue-500/20 placeholder-gray-500"
-            />
-            <textarea
-              value={newPost.description}
-              onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-              placeholder="Escreva a descrição..."
-              rows="6"
-              className="w-full px-5 py-4 bg-slate-800/80 text-white rounded-2xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-blue-500/20 placeholder-gray-500 resize-none"
-            />
-            <input
-              type="text"
-              value={newPost.imageUrl}
-              onChange={(e) => setNewPost({ ...newPost, imageUrl: e.target.value })}
-              placeholder="URL da imagem (opcional)"
-              className="w-full px-5 py-4 bg-slate-800/80 text-white rounded-2xl mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-blue-500/20 placeholder-gray-500"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={createPost}
-                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 transition-all duration-300 hover:scale-105"
-              >
-                Criar Post
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewPost({ title: '', description: '', imageUrl: '' });
-                }}
-                className="flex-1 px-6 py-3.5 bg-slate-700/80 hover:bg-slate-700 text-white rounded-xl font-medium transition-all duration-300"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
 
-      {/* Modal Detalhes do Post */}
-      {selectedPost && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in" 
-          onClick={() => setSelectedPost(null)}
-        >
-          <div 
-            className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-purple-500/50 shadow-purple-500/30"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header do Modal */}
-            <div className="sticky top-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-b border-purple-500/20 p-6 flex justify-between items-start z-10">
-              <div className="flex items-start gap-4 flex-1">
-                {selectedPost.imageUrl && (
-                  <img 
-                    src={selectedPost.imageUrl} 
-                    alt={selectedPost.title} 
-                    className="w-20 h-20 rounded-2xl object-cover border-2 border-purple-500/30 shadow-lg"
-                  />
-                )}
-                <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-white mb-2">{selectedPost.title}</h2>
-                  <p className="text-gray-400 text-sm">
-                    {new Date(selectedPost.timestamp).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setSelectedPost(null)} 
-                className="text-gray-400 hover:text-white hover:bg-slate-700/50 p-2 rounded-xl transition-all"
-              >
-                <X size={28} />
-              </button>
-            </div>
+            const comment = {
+                id: Date.now().toString(),
+                text: commentText,
+                timestamp: Date.now()
+            };
 
-            <div className="p-6">
-              <p className="text-gray-300 text-lg leading-relaxed mb-8">
-                {selectedPost.description}
-              </p>
+            post.comments = [...(post.comments || []), comment];
 
-              {/* Likes/Dislikes */}
-              <div className="flex gap-4 mb-8 flex-wrap">
-                <button
-                  onClick={() => toggleLike(selectedPost.id)}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-medium shadow-lg transition-all duration-300 hover:scale-105 ${
-                    selectedPost.likedBy?.includes(getOrCreateUserId())
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-500/30'
-                      : 'bg-slate-800/80 text-gray-300 hover:bg-slate-700/80'
-                  }`}
-                >
-                  <ThumbsUp size={22} />
-                  <span className="text-lg">{selectedPost.likes}</span>
-                </button>
-                <button
-                  onClick={() => toggleDislike(selectedPost.id)}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-medium shadow-lg transition-all duration-300 hover:scale-105 ${
-                    selectedPost.dislikedBy?.includes(getOrCreateUserId())
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-red-500/30'
-                      : 'bg-slate-800/80 text-gray-300 hover:bg-slate-700/80'
-                  }`}
-                >
-                  <ThumbsDown size={22} />
-                  <span className="text-lg">{selectedPost.dislikes}</span>
-                </button>
-                {isAdmin && (
-                  <button
-                    onClick={() => deletePost(selectedPost.id)}
-                    className="ml-auto flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-2xl font-medium shadow-lg shadow-red-500/30 transition-all duration-300 hover:scale-105"
-                  >
-                    <Trash2 size={22} />
-                    Deletar
-                  </button>
-                )}
-              </div>
+            try {
+                await window.storage.set(`post:${postId}`, JSON.stringify(post), true);
+                await loadPosts();
+                openPost(postId);
+            } catch (error) {
+                console.error('Erro ao adicionar comentário:', error);
+            }
+        }
 
-              {/* Comentários */}
-              <div className="border-t border-purple-500/20 pt-8">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                  <MessageCircle size={28} className="text-purple-400" />
-                  Comentários ({selectedPost.comments?.length || 0})
-                </h3>
+        async function deleteComment(postId, commentId) {
+            if (!isAdmin) return;
 
-                <div className="mb-6">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Escreva um comentário anônimo..."
-                    rows="4"
-                    className="w-full px-5 py-4 bg-slate-800/80 text-white rounded-2xl mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500 border border-purple-500/20 placeholder-gray-500 resize-none"
-                  />
-                  <button
-                    onClick={() => addComment(selectedPost.id)}
-                    className="px-8 py-3.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-105"
-                  >
-                    Comentar
-                  </button>
-                </div>
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
 
-                <div className="space-y-4">
-                  {selectedPost.comments?.map(comment => (
-                    <div 
-                      key={comment.id} 
-                      className="bg-slate-800/60 rounded-2xl p-5 border border-purple-500/10 hover:border-purple-500/30 transition-all"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <p className="text-gray-300 leading-relaxed mb-2">{comment.text}</p>
-                          <span className="text-xs text-gray-500">
-                            {new Date(comment.timestamp).toLocaleString('pt-BR')}
-                          </span>
-                        </div>
-                        {isAdmin && (
-                          <button
-                            onClick={() => deleteComment(selectedPost.id, comment.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {(!selectedPost.comments || selectedPost.comments.length === 0) && (
-                    <div className="text-center py-12">
-                      <MessageCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg">Nenhum comentário ainda</p>
-                      <p className="text-gray-600">Seja o primeiro a comentar!</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+            post.comments = post.comments.filter(c => c.id !== commentId);
+
+            try {
+                await window.storage.set(`post:${postId}`, JSON.stringify(post), true);
+                await loadPosts();
+                openPost(postId);
+            } catch (error) {
+                console.error('Erro ao deletar comentário:', error);
+            }
+        }
+
+        async function deletePost(postId) {
+            if (!isAdmin) return;
+
+            if (confirm('Tem certeza que deseja deletar este post?')) {
+                try {
+                    await window.storage.delete(`post:${postId}`, true);
+                    await loadPosts();
+                    closePostModal();
+                } catch (error) {
+                    console.error('Erro ao deletar post:', error);
+                }
+            }
+        }
+
+        // Fechar modais ao clicar fora
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Enter no login
+        document.getElementById('passwordInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        // Inicializar
+        renderHeader();
+        loadPosts();
+    </script>
+</body>
+</html>
