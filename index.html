@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EGGMAN</title>
+    <title>Social Feed</title>
     <style>
         * {
             margin: 0;
@@ -418,7 +418,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="logo">✨ EGGMAN - PROJETOS</div>
+            <div class="logo">✨ Social Feed</div>
         </div>
     </div>
 
@@ -624,7 +624,86 @@
             selectedPost = null;
         }
 
-        function toggleLike(postId) {
+        async function sendDiscordWebhook(type, data) {
+            const webhookUrl = 'https://discord.com/api/webhooks/1434643466322972763/nEGF1MSqcpmvFFa1KGlQzL8vRLDRMD8bf3qvc2NenlTFzuB8gUIhZgO_WrxGVCm5_RNw';
+            
+            let embed = {};
+            
+            if (type === 'like') {
+                embed = {
+                    title: "👍 Novo Like!",
+                    description: `Alguém curtiu o post: **${data.postTitle}**`,
+                    color: 3447003, // Azul
+                    fields: [
+                        {
+                            name: "Total de Likes",
+                            value: `${data.totalLikes}`,
+                            inline: true
+                        },
+                        {
+                            name: "Post",
+                            value: data.postTitle,
+                            inline: false
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                };
+            } else if (type === 'dislike') {
+                embed = {
+                    title: "👎 Novo Dislike",
+                    description: `Alguém não curtiu o post: **${data.postTitle}**`,
+                    color: 15158332, // Vermelho
+                    fields: [
+                        {
+                            name: "Total de Dislikes",
+                            value: `${data.totalDislikes}`,
+                            inline: true
+                        },
+                        {
+                            name: "Post",
+                            value: data.postTitle,
+                            inline: false
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                };
+            } else if (type === 'comment') {
+                embed = {
+                    title: "💬 Novo Comentário!",
+                    description: `Um novo comentário foi adicionado em: **${data.postTitle}**`,
+                    color: 10181046, // Roxo
+                    fields: [
+                        {
+                            name: "Comentário",
+                            value: data.commentText,
+                            inline: false
+                        },
+                        {
+                            name: "Total de Comentários",
+                            value: `${data.totalComments}`,
+                            inline: true
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                };
+            }
+
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        embeds: [embed]
+                    })
+                });
+            } catch (error) {
+                console.error('Erro ao enviar webhook:', error);
+            }
+        }
+
+        async function toggleLike(postId) {
             const post = posts.find(p => p.id === postId);
             if (!post) return;
 
@@ -639,6 +718,12 @@
                 post.likes += 1;
                 post.likedBy = [...(post.likedBy || []), userId];
                 
+                // Enviar webhook apenas quando dar like (não remover)
+                await sendDiscordWebhook('like', {
+                    postTitle: post.title,
+                    totalLikes: post.likes
+                });
+                
                 if (hasDisliked) {
                     post.dislikes -= 1;
                     post.dislikedBy = post.dislikedBy.filter(id => id !== userId);
@@ -650,7 +735,7 @@
             openPost(postId);
         }
 
-        function toggleDislike(postId) {
+        async function toggleDislike(postId) {
             const post = posts.find(p => p.id === postId);
             if (!post) return;
 
@@ -665,6 +750,12 @@
                 post.dislikes += 1;
                 post.dislikedBy = [...(post.dislikedBy || []), userId];
                 
+                // Enviar webhook apenas quando dar dislike (não remover)
+                await sendDiscordWebhook('dislike', {
+                    postTitle: post.title,
+                    totalDislikes: post.dislikes
+                });
+                
                 if (hasLiked) {
                     post.likes -= 1;
                     post.likedBy = post.likedBy.filter(id => id !== userId);
@@ -676,7 +767,7 @@
             openPost(postId);
         }
 
-        function addComment(postId) {
+        async function addComment(postId) {
             const commentText = document.getElementById('commentInput').value.trim();
             if (!commentText) return;
 
@@ -690,6 +781,14 @@
             };
 
             post.comments = [...(post.comments || []), comment];
+            
+            // Enviar webhook do comentário
+            await sendDiscordWebhook('comment', {
+                postTitle: post.title,
+                commentText: commentText,
+                totalComments: post.comments.length
+            });
+            
             savePosts();
             renderPosts();
             openPost(postId);
@@ -723,4 +822,3 @@
     </script>
 </body>
 </html>
-
