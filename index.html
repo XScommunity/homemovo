@@ -23,13 +23,7 @@
     <meta name="twitter:title" content="EGGMAN">
     <meta name="twitter:description" content="O Império Eggman é um regime totalitário e tecnocrático, liderado pelo incrível Dr. Eggman e seu Assistente Rocha, que buscam dominar o mundo. É uma entidade política composta pelo Dr. Eggman e Rocha, seu vasto exército de robôs e as diversas bases e instalações que ele opera.">
     <meta name="twitter:image" content="https://i.imgur.com/F52qoMi.png">
-</head>
-<body>
-    <!-- Conteúdo do site -->
-</body>
-</html>
-</head>
-<body>
+    
     <style>
         * {
             margin: 0;
@@ -480,23 +474,7 @@
         let posts = [];
         let selectedPost = null;
 
-        // ADICIONE SEUS POSTS AQUI - COPIE E COLE ESTE MODELO:
-        /*
-        {
-            id: "1",
-            title: "Título do Post",
-            description: "Descrição completa do post aqui...",
-            imageUrl: "https://example.com/imagem.jpg",
-            likes: 0,
-            dislikes: 0,
-            comments: [],
-            timestamp: Date.now(),
-            likedBy: [],
-            dislikedBy: []
-        },
-        */
-        
-        // POSTS PADRÃO - EDITE AQUI:
+        // POSTS PADRÃO
         posts = [
             {
                 id: "1",
@@ -507,6 +485,30 @@
                 dislikes: 0,
                 comments: [],
                 timestamp: Date.now(),
+                likedBy: [],
+                dislikedBy: []
+            },
+            {
+                id: "2",
+                title: "Sonic MK.2",
+                description: "Mecha Sonic Mk. 2 é uma réplica robótica alta e robusta de Sonic O Ouriço, construída pelo Dr. Eggman.\n\nHabilidades:\nAssim como Sonic, possui velocidade sobre-humana e habilidades acrobáticas.\nVariantes do Ataque Giratório: Seu principal movimento ofensivo é o Ataque Giratório, com múltiplas variações, incluindo uma investida poderosa no chão e um salto aéreo\nDurabilidade e resistência: É uma unidade de combate altamente resistente, com significativa força mecânica, capaz de sobreviver a grandes batalhas e quedas.",
+                imageUrl: "https://media.discordapp.net/attachments/1435434028999114874/1435434029397704875/image.png?ex=6911399d&is=690fe81d&hm=56ea2a42b66c9ddaf99e50baa2d69b8a3beb7141041147308bee23c5361497ad&=&format=png&quality=lossless&width=797&height=797",
+                likes: 0,
+                dislikes: 0,
+                comments: [],
+                timestamp: Date.now() - 100000,
+                likedBy: [],
+                dislikedBy: []
+            },
+            {
+                id: "3",
+                title: "mr careca",
+                description: "A careca brilha tanto dificultando você olhar para o rocha",
+                imageUrl: "https://media.discordapp.net/attachments/1225826419788087306/1436931355509264405/250.webp?ex=6911661c&is=6910149c&hm=614de9a2d597a8f0ecf45d9ed4fdf43863ee672417dd36627da49abd96737e85&=&format=png&width=281&height=260",
+                likes: 0,
+                dislikes: 0,
+                comments: [],
+                timestamp: Date.now() - 200000,
                 likedBy: [],
                 dislikedBy: []
             }
@@ -529,7 +531,6 @@
             const stored = localStorage.getItem('socialPosts');
             if (stored) {
                 const storedPosts = JSON.parse(stored);
-                // Mesclar likes/dislikes/comentários salvos com os posts hardcoded
                 posts = posts.map(post => {
                     const savedPost = storedPosts.find(p => p.id === post.id);
                     if (savedPost) {
@@ -589,7 +590,6 @@
         }
 
         function renderHeader() {
-            // Sem botões admin
         }
 
         function openPost(postId) {
@@ -609,7 +609,7 @@
             `;
 
             document.getElementById('postModalBody').innerHTML = `
-                <div class="modal-description">${selectedPost.description}</div>
+                <div class="modal-description">${selectedPost.description.replace(/\n/g, '<br>')}</div>
                 
                 <div class="action-buttons">
                     <button class="action-btn like-btn ${hasLiked ? 'active' : ''}" onclick="toggleLike('${selectedPost.id}')">
@@ -659,7 +659,7 @@
                 embed = {
                     title: "👍 Novo Like!",
                     description: `Alguém curtiu o post: **${data.postTitle}**`,
-                    color: 3447003, // Azul
+                    color: 3447003,
                     fields: [
                         {
                             name: "Total de Likes",
@@ -678,7 +678,7 @@
                 embed = {
                     title: "👎 Novo Dislike",
                     description: `Alguém não curtiu o post: **${data.postTitle}**`,
-                    color: 15158332, // Vermelho
+                    color: 15158332,
                     fields: [
                         {
                             name: "Total de Dislikes",
@@ -697,7 +697,7 @@
                 embed = {
                     title: "💬 Novo Comentário!",
                     description: `Um novo comentário foi adicionado em: **${data.postTitle}**`,
-                    color: 10181046, // Roxo
+                    color: 10181046,
                     fields: [
                         {
                             name: "Comentário",
@@ -744,7 +744,6 @@
                 post.likes += 1;
                 post.likedBy = [...(post.likedBy || []), userId];
                 
-                // Enviar webhook apenas quando dar like (não remover)
                 await sendDiscordWebhook('like', {
                     postTitle: post.title,
                     totalLikes: post.likes
@@ -773,83 +772,3 @@
                 post.dislikes -= 1;
                 post.dislikedBy = post.dislikedBy.filter(id => id !== userId);
             } else {
-                post.dislikes += 1;
-                post.dislikedBy = [...(post.dislikedBy || []), userId];
-                
-                // Enviar webhook apenas quando dar dislike (não remover)
-                await sendDiscordWebhook('dislike', {
-                    postTitle: post.title,
-                    totalDislikes: post.dislikes
-                });
-                
-                if (hasLiked) {
-                    post.likes -= 1;
-                    post.likedBy = post.likedBy.filter(id => id !== userId);
-                }
-            }
-
-            savePosts();
-            renderPosts();
-            openPost(postId);
-        }
-
-        async function addComment(postId) {
-            const commentText = document.getElementById('commentInput').value.trim();
-            if (!commentText) return;
-
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const comment = {
-                id: Date.now().toString(),
-                text: commentText,
-                timestamp: Date.now()
-            };
-
-            post.comments = [...(post.comments || []), comment];
-            
-            // Enviar webhook do comentário
-            await sendDiscordWebhook('comment', {
-                postTitle: post.title,
-                commentText: commentText,
-                totalComments: post.comments.length
-            });
-            
-            savePosts();
-            renderPosts();
-            openPost(postId);
-        }
-
-        function deleteComment(postId, commentId) {
-            // Removido - sem função admin
-        }
-
-        function deletePost(postId) {
-            // Removido - sem função admin
-        }
-
-        // Fechar modais ao clicar fora
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('active');
-                }
-            });
-        });
-
-        // Enter no login
-        document.getElementById('passwordInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-
-        // Inicializar
-        renderHeader();
-        loadPosts();
-    </script>
-</body>
-</html>
-
-
-
-
-
