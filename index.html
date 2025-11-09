@@ -87,22 +87,6 @@
             box-shadow: 0 6px 25px rgba(139, 92, 246, 0.5);
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            margin-right: 10px;
-        }
-
-        .btn-info {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-        }
-
-        .btn-info:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
-        }
-
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -319,17 +303,6 @@
             box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
         }
 
-        .delete-btn {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
-            margin-left: auto;
-        }
-
-        .delete-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(220, 38, 38, 0.5);
-        }
-
         .comments-section {
             border-top: 2px solid rgba(147, 51, 234, 0.2);
             padding-top: 30px;
@@ -380,43 +353,6 @@
             font-size: 13px;
         }
 
-        .comment-delete {
-            background: rgba(239, 68, 68, 0.3);
-            border: none;
-            color: #fca5a5;
-            padding: 8px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            float: right;
-            transition: all 0.3s;
-        }
-
-        .comment-delete:hover {
-            background: rgba(239, 68, 68, 0.5);
-            color: white;
-        }
-
-        .input-field {
-            width: 100%;
-            padding: 15px;
-            background: rgba(30, 30, 60, 0.6);
-            border: 2px solid rgba(147, 51, 234, 0.3);
-            border-radius: 15px;
-            color: white;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: rgba(147, 51, 234, 0.6);
-        }
-
-        textarea.input-field {
-            resize: none;
-            min-height: 120px;
-        }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -426,12 +362,6 @@
         .empty-state h3 {
             font-size: 24px;
             margin-bottom: 10px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 100px 20px;
-            font-size: 24px;
         }
     </style>
 </head>
@@ -446,20 +376,9 @@
         <div id="postsGrid" class="posts-grid"></div>
         <div id="emptyState" style="display: none;" class="empty-state">
             <h3>Nenhuma postagem ainda</h3>
-            <p>Faça login como admin para criar a primeira!</p>
         </div>
-        <div id="loading" class="loading" style="display: none;">Carregando...</div>
     </div>
 
-    <!-- Modal Login -->
-    <div id="loginModal" class="modal" style="display: none;">
-    </div>
-
-    <!-- Modal Criar Post -->
-    <div id="createModal" class="modal" style="display: none;">
-    </div>
-
-    <!-- Modal Detalhes Post -->
     <div id="postModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -474,7 +393,6 @@
         let posts = [];
         let selectedPost = null;
 
-        // POSTS PADRÃO
         posts = [
             {
                 id: "1",
@@ -520,11 +438,10 @@
                 likes: 0,
                 dislikes: 0,
                 comments: [],
-                timestamp: Date.now() - 100000,
+                timestamp: Date.now() - 300000,
                 likedBy: [],
                 dislikedBy: []
-            },
-            {
+            }
         ];
 
         function getUserId() {
@@ -549,8 +466,8 @@
                     if (savedPost) {
                         return {
                             ...post,
-                            likes: savedPost.likes || 0,
-                            dislikes: savedPost.dislikes || 0,
+                            likes: savedPost.likes || post.likes,
+                            dislikes: savedPost.dislikes || post.dislikes,
                             comments: savedPost.comments || [],
                             likedBy: savedPost.likedBy || [],
                             dislikedBy: savedPost.dislikedBy || []
@@ -580,8 +497,8 @@
                 const hasDisliked = post.dislikedBy?.includes(userId);
                 
                 return `
-                    <div class="post-card" onclick="event.preventDefault(); openPost('${post.id}');">
-                        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="${post.title}" onclick="event.stopPropagation(); openPost('${post.id}');">` : ''}
+                    <div class="post-card" onclick="openPost('${post.id}');">
+                        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="${post.title}">` : ''}
                         <div class="post-content">
                             <div class="post-title">${post.title}</div>
                             <div class="post-description">${post.description}</div>
@@ -600,9 +517,6 @@
                     </div>
                 `;
             }).join('');
-        }
-
-        function renderHeader() {
         }
 
         function openPost(postId) {
@@ -674,16 +588,8 @@
                     description: `Alguém curtiu o post: **${data.postTitle}**`,
                     color: 3447003,
                     fields: [
-                        {
-                            name: "Total de Likes",
-                            value: `${data.totalLikes}`,
-                            inline: true
-                        },
-                        {
-                            name: "Post",
-                            value: data.postTitle,
-                            inline: false
-                        }
+                        { name: "Total de Likes", value: `${data.totalLikes}`, inline: true },
+                        { name: "Post", value: data.postTitle, inline: false }
                     ],
                     timestamp: new Date().toISOString()
                 };
@@ -693,16 +599,8 @@
                     description: `Alguém não curtiu o post: **${data.postTitle}**`,
                     color: 15158332,
                     fields: [
-                        {
-                            name: "Total de Dislikes",
-                            value: `${data.totalDislikes}`,
-                            inline: true
-                        },
-                        {
-                            name: "Post",
-                            value: data.postTitle,
-                            inline: false
-                        }
+                        { name: "Total de Dislikes", value: `${data.totalDislikes}`, inline: true },
+                        { name: "Post", value: data.postTitle, inline: false }
                     ],
                     timestamp: new Date().toISOString()
                 };
@@ -712,16 +610,8 @@
                     description: `Um novo comentário foi adicionado em: **${data.postTitle}**`,
                     color: 10181046,
                     fields: [
-                        {
-                            name: "Comentário",
-                            value: data.commentText,
-                            inline: false
-                        },
-                        {
-                            name: "Total de Comentários",
-                            value: `${data.totalComments}`,
-                            inline: true
-                        }
+                        { name: "Comentário", value: data.commentText, inline: false },
+                        { name: "Total de Comentários", value: `${data.totalComments}`, inline: true }
                     ],
                     timestamp: new Date().toISOString()
                 };
@@ -730,12 +620,8 @@
             try {
                 await fetch(webhookUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        embeds: [embed]
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ embeds: [embed] })
                 });
             } catch (error) {
                 console.error('Erro ao enviar webhook:', error);
@@ -830,12 +716,6 @@
             openPost(postId);
         }
 
-        function deleteComment(postId, commentId) {
-        }
-
-        function deletePost(postId) {
-        }
-
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
@@ -844,14 +724,7 @@
             });
         });
 
-        document.getElementById('passwordInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-
-        renderHeader();
         loadPosts();
     </script>
 </body>
 </html>
-
-
