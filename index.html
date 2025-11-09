@@ -772,3 +772,71 @@
                 post.dislikes -= 1;
                 post.dislikedBy = post.dislikedBy.filter(id => id !== userId);
             } else {
+                post.dislikes += 1;
+                post.dislikedBy = [...(post.dislikedBy || []), userId];
+                
+                await sendDiscordWebhook('dislike', {
+                    postTitle: post.title,
+                    totalDislikes: post.dislikes
+                });
+                
+                if (hasLiked) {
+                    post.likes -= 1;
+                    post.likedBy = post.likedBy.filter(id => id !== userId);
+                }
+            }
+
+            savePosts();
+            renderPosts();
+            openPost(postId);
+        }
+
+        async function addComment(postId) {
+            const commentText = document.getElementById('commentInput').value.trim();
+            if (!commentText) return;
+
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const comment = {
+                id: Date.now().toString(),
+                text: commentText,
+                timestamp: Date.now()
+            };
+
+            post.comments = [...(post.comments || []), comment];
+            
+            await sendDiscordWebhook('comment', {
+                postTitle: post.title,
+                commentText: commentText,
+                totalComments: post.comments.length
+            });
+            
+            savePosts();
+            renderPosts();
+            openPost(postId);
+        }
+
+        function deleteComment(postId, commentId) {
+        }
+
+        function deletePost(postId) {
+        }
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        document.getElementById('passwordInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        renderHeader();
+        loadPosts();
+    </script>
+</body>
+</html>
